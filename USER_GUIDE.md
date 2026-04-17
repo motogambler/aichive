@@ -48,6 +48,122 @@ Docker
 ------
 A Dockerfile and docker-compose are included for convenience (see repository root). Build and run according to the included README/docker-compose definitions.
 
+Quick Start — Start the interceptor proxy
+----------------------------------------
+These steps show two common ways to run the mitmproxy addon used by this project. The error "No module named 'interceptor'" happens when `mitmdump` can't import the local package; instructions below cover both fixes.
+
+A) Run locally in a virtualenv (recommended for development)
+
+1. Create and activate a venv (Windows PowerShell example):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+2. Install the project (editable) and dependencies so `interceptor` is importable:
+
+```bash
+pip install -e .
+pip install -r interceptor/requirements.txt
+```
+
+3. Start the proxy (port 8080):
+
+```bash
+mitmdump -s interceptor/mitm_addon.py --listen-port 8080
+```
+
+If you prefer not to install the package, run `mitmdump` with the repository root on `PYTHONPATH` so `interceptor` can be imported:
+
+```bash
+# Unix / Git Bash
+PYTHONPATH=. mitmdump -s interceptor/mitm_addon.py --listen-port 8080
+
+# Windows PowerShell
+$env:PYTHONPATH = '.'; mitmdump -s interceptor/mitm_addon.py --listen-port 8080
+```
+
+B) Run in Docker (runs the same `mitmdump` entrypoint)
+
+```bash
+docker build -t loc-interceptor .
+docker run --rm -p 8080:8080 -v "$(pwd)/interceptor:/app/interceptor" loc-interceptor
+
+# or with docker-compose (service name `interceptor`):
+docker-compose up interceptor
+```
+
+Validate the proxy is running
+-----------------------------
+- Watch the `mitmdump` output: on successful load you'll see the addon load message and any `ctx.log.info` lines from `interceptor/mitm_addon.py`.
+- Confirm a process is listening on port `8080` (example):
+
+```bash
+# Linux/WSL/Git Bash
+ss -ltnp | grep 8080 || netstat -ano | grep 8080
+
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 8080
+```
+
+Run a few test requests through the proxy
+----------------------------------------
+- Simple GET (using the proxy):
+
+```bash
+curl -x http://localhost:8080 https://httpbin.org/get
+```
+
+- Simple POST:
+
+```bash
+curl -x http://localhost:8080 -d '{"test":1}' -H "Content-Type: application/json" https://httpbin.org/post
+```
+
+Inspect captured messages
+-------------------------
+- The addon stores messages via the `DB` helper (see `interceptor/db.py`). By default the SQLite DB path is `./interceptor_storage.db`. You can inspect it with `sqlite3` or the CLI:
+
+```bash
+python -m interceptor.cli list
+python -m interceptor.cli show 1
+```
+
+Troubleshooting the "No module named 'interceptor'" error
+---------------------------------------------------------
+- Cause: `mitmdump` runs in a Python environment that doesn't have the repo package on `sys.path`.
+- Fixes (choose one):
+  - Install the package into the active environment: `pip install -e .` (recommended for development).
+  - Export `PYTHONPATH` to include the repo root when running `mitmdump` (examples above).
+
+If you still see errors, confirm you activated the same venv where `mitmproxy` and the package were installed.
+
+Docker helper script (recommended)
+---------------------------------
+If you run the services in Docker (recommended on Windows to avoid local build issues), a helper script is provided to start both services, extract the mitmproxy CA, run a TLS test through the proxy, and run the exporter on the compose network.
+
+Usage (Git Bash / WSL):
+
+```bash
+# from repo root
+scripts/run_in_docker.sh
+```
+
+What the script does:
+- Starts `interceptor` and `mcp` services via `docker-compose`.
+- Copies the mitmproxy CA to `./mitmproxy-ca.pem` in the repo.
+- Runs a containerized `curl` on the compose network to test `https://api.openai.com` through the proxy.
+- Runs the exporter in a transient container attached to the compose network so it can POST to `mcp` by hostname.
+
+After running the script you can inspect received messages:
+
+```bash
+docker exec $(docker ps -qf "name=loc-ai-storage-mcp-1") tail -n 200 /app/mcp_received.jsonl
+```
+
+If you need the mitmproxy CA trusted by Windows (so system tools like `curl` and browsers trust the proxy), import `mitmproxy-ca.pem` into the Windows certificate store (see the TLS section above).
+
 How it works (high level)
 -------------------------
 - mitmproxy addon intercepts flows and stores messages to the SQLite DB via `DB.store_message` (see [interceptor/mitm_addon.py](interceptor/mitm_addon.py)).
