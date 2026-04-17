@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  interceptor:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./interceptor:/app/interceptor
+    restart: unless-stopped
+  scheduler:
+    build: .
+    command: python /app/interceptor/scheduler.py
+    volumes:
+      - ./interceptor:/app/interceptor
+      - ./:/app
+    restart: unless-stopped

@@ -1,0 +1,3 @@
+# Ignore local agent files and configs
+.github/agents/*
+.github/agent-config*

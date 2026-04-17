@@ -1,0 +1,17 @@
+mitmproxy==10.0.0
+faiss-cpu==1.13.2
+numpy==1.26.4
+python-dotenv==1.0.0
+rich==13.6.0
+cryptography==41.0.4
+tqdm==4.66.1
+pytest==7.4.0
+lz4==4.3.2
+brotli==1.0.9
+# Added optional/required libs
+openai==1.4.0
+prometheus-client==0.16.0
+tiktoken==0.4.0
+PyYAML==6.0
+# Optional extras (install with pip install .[openai,embeddings])
+# sentence-transformers>=2.2.0  # for local embeddings

@@ -1,0 +1,29 @@
+# interceptor configuration
+include_patterns:
+  - 'api.github.com'
+  - 'github.com'
+  - 'copilot'
+  - 'example.com'
+ # e.g. ['api.github.com', 'copilot']
+exclude_patterns:
+  - 'avatars.githubusercontent.com'
+  - 'gravatar'
+max_body_bytes: 1048576 # 1MB
+retention_days: 90
+embed:
+  enabled: true
+  model: 'text-embedding-3-small'
+  dim: 1536
+faiss:
+  index_path: './interceptor/faiss.index'
+  mapping_path: './interceptor/faiss_map.json'
+tokens:
+  compression: 'zlib' # options: zlib, brotli, lz4
+  varint_deltas: true
+  encoding: 'gpt2'
+
+# wire compression config: enable restructure by default
+compression:
+  wire:
+    enabled: true
+    strategy: 'restructure' # restructure | content-encoding | none

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loc-ai-storage"
+version = "0.1.1"
+description = "Local interceptor storage, compaction, and recall tools"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [ {name = "loc-ai"} ]
+license = { text = "MIT" }
+classifiers = [
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3 :: Only",
+	"Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+embeddings = ["sentence-transformers>=2.2.0"]
+openai = ["openai>=1.0.0"]
+faiss = ["faiss-cpu>=1.7.4"]
+monitoring = ["prometheus-client>=0.16.0"]
+
+[project.scripts]
+loc-compact = "interceptor.compact:main"
+loc-recall = "interceptor.recall:main"
+loc-compaction-worker = "interceptor.compaction_worker:main"
+loc-ingest = "interceptor.ingest_worker:main"
+loc-compaction-inspect = "interceptor.compaction_inspect:main"
+loc-gain = "interceptor.gain:main"
+loc-export = "interceptor.export:main"
+loc-export-parquet = "interceptor.export_parquet:main"
+loc-mcp-server = "interceptor.mcp_server:main"
